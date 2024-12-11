@@ -1,3 +1,7 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -14,28 +18,48 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.MapGet("/", () => "Hellow World!");
 
-app.MapGet("/weatherforecast", () =>
+int numberToGuess = 87;
+app.MapGet("/guess/{input:int}", (int input) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    if (input < numberToGuess)
+    {
+        return "Too low!";
+    }
+    else if (input > numberToGuess)
+    {
+        return "Too high!";
+    }
+    else
+    {
+        return "Correct number!";
+    }
+});
+
+app.MapGet("/time", () => DateTime.Now.ToString("F"));
+
+//adding a concert
+app.MapPost("/create-concert", async (HttpRequest req) => {
+    var formData = await req.ReadFormAsync();
+    var name = formData["name"];
+    var venue = formData["venue"];
+    var date = formData["date"];
+    var capacity = formData["capacity"];
+
+    var concertData = new {
+        Name = name,
+        Venue = venue,
+        Date = date,
+        Capacity = capacity
+    };
+
+    Console.WriteLine($"Added concert with name: {concertData.Name}, Venue: {concertData.Venue} Date: {concertData.Date}, Capacity: {concertData.Capacity}");
+    return Results.Created("/create-concert", $"Added concert with name: {concertData.Name}, Venue: {concertData.Venue} Date: {concertData.Date}, Capacity: {concertData.Capacity}");
+                   
+});
+
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+
